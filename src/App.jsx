@@ -10,6 +10,7 @@ import {
   Cpu,
   BarChart,
 } from "lucide-react";
+import Footer from "./components/Footer";
 
 function App() {
   const topics = [
@@ -89,6 +90,7 @@ function App() {
           ))}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
