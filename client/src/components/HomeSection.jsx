@@ -80,7 +80,7 @@ function HomeSection() {
                                 <div className="flex-shrink-0">{topic.icon}</div>
                             </div>
                             <p className="text-gray-500 mb-6">{topic.description}</p>
-                            <Link to={`/interview/${topic.title.toLowerCase()}`} className="mt-auto"><button className="bg-black text-white w-full py-2.5 rounded-lg hover:bg-gray-800 transition duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 cursor-pointer">
+                            <Link to={`/interview/${topic.title.toLowerCase().replace(' ', '-')}`} className="mt-auto"><button className="bg-black text-white w-full py-2.5 rounded-lg hover:bg-gray-800 transition duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 cursor-pointer">
                                 Start Practice
                             </button></Link>
                         </div>

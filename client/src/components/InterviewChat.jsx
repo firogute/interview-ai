@@ -12,6 +12,41 @@ import {
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet';
+
+// Topic metadata with SEO-friendly descriptions
+const TOPIC_METADATA = {
+    javascript: {
+        title: "JavaScript Interview Practice | AI Mock Interviews",
+        description: "Practice core JavaScript concepts including closures, async programming, and ES6+ features with our AI interviewer",
+        keywords: "JavaScript interview, JS questions, coding interview practice"
+    },
+    react: {
+        title: "React.js Interview Practice | AI-Powered Mock Interviews",
+        description: "Master React hooks, component lifecycle, state management and performance optimization techniques",
+        keywords: "React interview, React.js questions, frontend interview"
+    },
+    'node.js': {
+        title: "Node.js Interview Preparation | AI Coding Interview Simulator",
+        description: "Practice backend development with Node.js, Express, REST APIs and authentication flows",
+        keywords: "Node interview, backend questions, API design"
+    },
+    database: {
+        title: "Database Interview Practice | SQL & NoSQL Questions",
+        description: "Prepare for database interview questions on SQL queries, database design and ORM concepts",
+        keywords: "SQL interview, database questions, system design"
+    },
+    'system-design': {
+        title: "System Design Interview Practice | Scalability Questions",
+        description: "Practice distributed systems, scaling patterns and architecture design for technical interviews",
+        keywords: "System design interview, scalability questions, architecture"
+    },
+    'data-structures': {
+        title: "Data Structures & Algorithms Interview Practice",
+        description: "Master algorithms and data structures for technical interviews at top tech companies",
+        keywords: "DSA interview, algorithm questions, coding challenges"
+    }
+};
 
 const InterviewChat = () => {
     const { topic } = useParams();
@@ -20,7 +55,7 @@ const InterviewChat = () => {
         {
             id: 1,
             role: 'ai',
-            content: `Welcome to your ${topic} interview practice! I'm your AI interviewer. Let's start with a fundamental question.`,
+            content: `Welcome to your ${topic} interview practice! I'll be your AI interviewer today. Let's begin with a fundamental question.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
     ]);
@@ -31,30 +66,60 @@ const InterviewChat = () => {
     const chatEndRef = useRef(null);
     const recognitionRef = useRef(null);
 
+    // Get current topic metadata or fallback
+    const currentTopic = TOPIC_METADATA[topic.toLowerCase()] || {
+        title: `${topic} Interview Practice`,
+        description: `Practice ${topic} interview questions with our AI interviewer`,
+        keywords: `${topic} interview, technical questions, coding practice`
+    };
 
+    // Sample questions with topic-specific follow-ups
     const topicQuestions = {
         javascript: [
             "Explain the event loop in JavaScript and how it handles asynchronous operations.",
-            "How would you implement a debounce function from scratch?",
-            "What are the key differences between ES6 classes and prototype-based inheritance?"
+            "How would you implement memoization from scratch?",
+            "Compare prototypal inheritance with classical inheritance patterns."
         ],
         react: [
-            "Walk me through the React component lifecycle in modern functional components.",
+            "Explain the React Fiber architecture and its benefits.",
             "How would you optimize performance in a large React application?",
-            "Explain the difference between React context and Redux - when would you use each?"
+            "When would you choose Context API vs Redux for state management?"
+        ],
+        'node.js': [
+            "Explain the Node.js event-driven architecture.",
+            "How would you handle memory leaks in a Node application?",
+            "Describe your approach to authentication in a REST API."
+        ],
+        database: [
+            "Explain the differences between SQL and NoSQL databases.",
+            "How would you design a schema for a social media platform?",
+            "Describe approaches for database sharding and partitioning."
+        ],
+        'system-design': [
+            "Design a URL shortening service like bit.ly",
+            "How would you scale a chat application to 1M concurrent users?",
+            "Explain CAP theorem and its implications."
+        ],
+        'data-structures': [
+            "Implement and analyze a LRU cache",
+            "Compare BFS and DFS traversal algorithms",
+            "Explain time complexity of common sorting algorithms"
         ]
     };
 
+    // Initialize speech recognition
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = false;
+            recognitionRef.current.interimResults = true;
             recognitionRef.current.lang = 'en-US';
 
             recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
+                const transcript = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join('');
                 setInput(transcript);
             };
 
@@ -75,7 +140,7 @@ const InterviewChat = () => {
         };
     }, []);
 
-
+    // Auto-scroll to bottom when messages change
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -100,6 +165,13 @@ const InterviewChat = () => {
             utterance.pitch = 1.1;
             utterance.volume = 0.9;
 
+            // Try to use a natural-sounding voice
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en'));
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
 
@@ -110,6 +182,7 @@ const InterviewChat = () => {
     const handleSend = () => {
         if (!input.trim()) return;
 
+        // Add user message
         const userMessage = {
             id: Date.now(),
             role: 'user',
@@ -119,11 +192,12 @@ const InterviewChat = () => {
         setMessages(prev => [...prev, userMessage]);
         setInput('');
 
+        // Generate AI response after short delay
         setTimeout(() => {
             const questions = topicQuestions[topic.toLowerCase()] || [
-                "That's interesting. Can you elaborate on your approach?",
+                "Interesting perspective. Can you elaborate on that?",
                 "How would you handle edge cases in this scenario?",
-                "What alternative solutions did you consider?"
+                "What metrics would you use to measure the success of this approach?"
             ];
 
             const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
@@ -136,7 +210,7 @@ const InterviewChat = () => {
 
             setMessages(prev => [...prev, aiResponse]);
             speak(aiResponse.content);
-        }, 1000);
+        }, 800);
     };
 
     const handleKeyDown = (e) => {
@@ -148,26 +222,43 @@ const InterviewChat = () => {
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
+            {/* SEO Optimization */}
+            <Helmet>
+                <title>{currentTopic.title}</title>
+                <meta name="description" content={currentTopic.description} />
+                <meta name="keywords" content={currentTopic.keywords} />
+                <meta property="og:title" content={currentTopic.title} />
+                <meta property="og:description" content={currentTopic.description} />
+                <meta property="og:type" content="website" />
+            </Helmet>
+
             {/* Header */}
             <header className="bg-white border-b border-gray-200">
-                <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/')}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-                    >
-                        <ChevronLeft size={20} />
-                        <span className="font-medium">Back to Topics</span>
-                    </button>
+                <div className="max-w-4xl mx-auto px-4 py-6">
+                    <div className="flex items-center justify-between">
+                        {/* Back button */}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            <ChevronLeft size={20} />
+                            <span className="font-medium">All Topics</span>
+                        </button>
 
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full">
-                            <Sparkles size={16} className="text-blue-500" />
-                            <span className="text-sm font-medium text-blue-700">{topic} Interview</span>
+                        {/* Dynamic topic title and description */}
+                        <div className="text-center mx-4 flex-1">
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+                                {currentTopic.title.split('|')[0].trim()}
+                            </h1>
+                            <p className="text-gray-500 text-sm mt-1 hidden sm:block">
+                                {currentTopic.description}
+                            </p>
                         </div>
 
+                        {/* Voice control */}
                         <button
                             onClick={() => setIsMuted(!isMuted)}
-                            className={`p-2 rounded-full cursor-pointer ${isMuted ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}
+                            className={`p-2 rounded-full ${isMuted ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}
                             aria-label={isMuted ? "Unmute AI voice" : "Mute AI voice"}
                         >
                             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -229,6 +320,7 @@ const InterviewChat = () => {
                 </AnimatePresence>
             </main>
 
+            {/* Input Area */}
             <div className="bg-white border-t border-gray-200 py-4 px-4">
                 <div className="max-w-4xl mx-auto">
                     <div className="relative flex items-center">
