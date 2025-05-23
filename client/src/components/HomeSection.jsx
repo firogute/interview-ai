@@ -12,8 +12,10 @@ import {
     Home,
 } from "lucide-react";
 import { Link } from "react-router-dom"
+import { useDocumentTitle } from "./hooks/useDocumentTitles";
 
 function HomeSection() {
+    useDocumentTitle('AI Interview Practice');
     const topics = [
         {
             title: "JavaScript",

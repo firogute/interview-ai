@@ -13,101 +13,86 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
+import { useDocumentTitle } from './hooks/useDocumentTitles';
 
-// Topic metadata with SEO-friendly descriptions
 const TOPIC_METADATA = {
     javascript: {
-        title: "JavaScript Interview Practice | AI Mock Interviews",
-        description: "Practice core JavaScript concepts including closures, async programming, and ES6+ features with our AI interviewer",
-        keywords: "JavaScript interview, JS questions, coding interview practice"
+        title: "JavaScript Interview",
+        description: "Practice core JS concepts, async programming, and modern ES6+ features",
+        keywords: "JavaScript interview, JS questions, coding interview practice",
+        icon: "💻",
+        color: "text-yellow-500"
     },
     react: {
-        title: "React.js Interview Practice | AI-Powered Mock Interviews",
-        description: "Master React hooks, component lifecycle, state management and performance optimization techniques",
-        keywords: "React interview, React.js questions, frontend interview"
+        title: "React Interview",
+        description: "Master React hooks, component lifecycle, and state management",
+        keywords: "React interview, React.js questions, frontend interview",
+        icon: "⚛️",
+        color: "text-blue-500"
     },
     'node.js': {
-        title: "Node.js Interview Preparation | AI Coding Interview Simulator",
-        description: "Practice backend development with Node.js, Express, REST APIs and authentication flows",
-        keywords: "Node interview, backend questions, API design"
+        title: "Node.js Interview",
+        description: "Practice backend development with Node, Express, and REST APIs",
+        keywords: "Node interview, backend questions, API design",
+        icon: "🖥️",
+        color: "text-green-500"
     },
     database: {
-        title: "Database Interview Practice | SQL & NoSQL Questions",
-        description: "Prepare for database interview questions on SQL queries, database design and ORM concepts",
-        keywords: "SQL interview, database questions, system design"
+        title: "Database Interview",
+        description: "Prepare for SQL, NoSQL, and database design questions",
+        keywords: "SQL interview, database questions, system design",
+        icon: "🗄️",
+        color: "text-purple-500"
     },
     'system-design': {
-        title: "System Design Interview Practice | Scalability Questions",
-        description: "Practice distributed systems, scaling patterns and architecture design for technical interviews",
-        keywords: "System design interview, scalability questions, architecture"
+        title: "System Design Interview",
+        description: "Practice distributed systems and architecture patterns",
+        keywords: "System design interview, scalability questions",
+        icon: "📊",
+        color: "text-red-500"
     },
     'data-structures': {
-        title: "Data Structures & Algorithms Interview Practice",
-        description: "Master algorithms and data structures for technical interviews at top tech companies",
-        keywords: "DSA interview, algorithm questions, coding challenges"
+        title: "Data Structures Interview",
+        description: "Master algorithms for technical interviews at top companies",
+        keywords: "DSA interview, algorithm questions",
+        icon: "🧮",
+        color: "text-indigo-500"
     }
 };
 
 const InterviewChat = () => {
     const { topic } = useParams();
+    useDocumentTitle(`${topic} Interview | AI Interview Practice`);
     const navigate = useNavigate();
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            role: 'ai',
-            content: `Welcome to your ${topic} interview practice! I'll be your AI interviewer today. Let's begin with a fundamental question.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-    ]);
+    const [messages, setMessages] = useState([]);
+    const [userHasInteracted, setUserHasInteracted] = useState(false);
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const chatEndRef = useRef(null);
+    const chatBoxRef = useRef(null);
+
     const recognitionRef = useRef(null);
 
-    // Get current topic metadata or fallback
-    const currentTopic = TOPIC_METADATA[topic.toLowerCase()] || {
-        title: `${topic} Interview Practice`,
-        description: `Practice ${topic} interview questions with our AI interviewer`,
-        keywords: `${topic} interview, technical questions, coding practice`
+    // Get current topic metadata
+    const currentTopic = TOPIC_METADATA[topic] || {
+        title: `${topic} Interview`,
+        description: `Practice ${topic} interview questions`,
+        keywords: `${topic} interview questions`,
+        icon: "❓",
+        color: "text-gray-500"
     };
 
-    // Sample questions with topic-specific follow-ups
-    const topicQuestions = {
-        javascript: [
-            "Explain the event loop in JavaScript and how it handles asynchronous operations.",
-            "How would you implement memoization from scratch?",
-            "Compare prototypal inheritance with classical inheritance patterns."
-        ],
-        react: [
-            "Explain the React Fiber architecture and its benefits.",
-            "How would you optimize performance in a large React application?",
-            "When would you choose Context API vs Redux for state management?"
-        ],
-        'node.js': [
-            "Explain the Node.js event-driven architecture.",
-            "How would you handle memory leaks in a Node application?",
-            "Describe your approach to authentication in a REST API."
-        ],
-        database: [
-            "Explain the differences between SQL and NoSQL databases.",
-            "How would you design a schema for a social media platform?",
-            "Describe approaches for database sharding and partitioning."
-        ],
-        'system-design': [
-            "Design a URL shortening service like bit.ly",
-            "How would you scale a chat application to 1M concurrent users?",
-            "Explain CAP theorem and its implications."
-        ],
-        'data-structures': [
-            "Implement and analyze a LRU cache",
-            "Compare BFS and DFS traversal algorithms",
-            "Explain time complexity of common sorting algorithms"
-        ]
-    };
+    useEffect(() => {
+        setMessages([{
+            id: 1,
+            role: 'ai',
+            content: `Welcome to your ${currentTopic.title} practice! I'll be your AI interviewer. Let's begin.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+    }, [topic]);
 
-    // Initialize speech recognition
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -123,27 +108,24 @@ const InterviewChat = () => {
                 setInput(transcript);
             };
 
-            recognitionRef.current.onerror = (event) => {
-                console.error('Speech recognition error', event.error);
-                setIsListening(false);
-            };
-
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
+            recognitionRef.current.onend = () => setIsListening(false);
         }
 
         return () => {
-            if (recognitionRef.current) {
-                recognitionRef.current.stop();
-            }
+            recognitionRef.current?.stop();
         };
     }, []);
 
-    // Auto-scroll to bottom when messages change
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+        if (!userHasInteracted) return;
+        if (chatBoxRef.current && chatEndRef.current) {
+            chatBoxRef.current.scrollTo({
+                top: chatEndRef.current.offsetTop,
+                behavior: 'smooth',
+            });
+        }
+
+    }, [messages, userHasInteracted]);
 
     const toggleListening = () => {
         if (isListening) {
@@ -157,54 +139,49 @@ const InterviewChat = () => {
 
     const speak = (text) => {
         if ('speechSynthesis' in window && !isMuted) {
-            setIsSpeaking(true);
             window.speechSynthesis.cancel();
-
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.92;
-            utterance.pitch = 1.1;
-            utterance.volume = 0.9;
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
 
-            // Try to use a natural-sounding voice
             const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en'));
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
-            }
+            const voice = voices.find(v => v.name.includes('Google')) || voices[0];
+            if (voice) utterance.voice = voice;
 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-
+            setIsSpeaking(true);
+            utterance.onend = utterance.onerror = () => setIsSpeaking(false);
             window.speechSynthesis.speak(utterance);
         }
     };
 
     const handleSend = () => {
+
+        setUserHasInteracted(true);
         if (!input.trim()) return;
 
-        // Add user message
         const userMessage = {
             id: Date.now(),
             role: 'user',
             content: input,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
+
         setMessages(prev => [...prev, userMessage]);
         setInput('');
 
-        // Generate AI response after short delay
+        // Simulate AI response
         setTimeout(() => {
-            const questions = topicQuestions[topic.toLowerCase()] || [
-                "Interesting perspective. Can you elaborate on that?",
-                "How would you handle edge cases in this scenario?",
-                "What metrics would you use to measure the success of this approach?"
+            const responses = [
+                "Interesting perspective. How would you handle edge cases?",
+                "Can you elaborate on that approach?",
+                "What alternative solutions did you consider?",
+                "How would you optimize this solution?"
             ];
 
-            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
             const aiResponse = {
                 id: Date.now() + 1,
                 role: 'ai',
-                content: randomQuestion,
+                content: responses[Math.floor(Math.random() * responses.length)],
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
@@ -213,163 +190,151 @@ const InterviewChat = () => {
         }, 800);
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
-            {/* SEO Optimization */}
+        <div className="flex flex-col min-h-screen bg-gray-50">
             <Helmet>
-                <title>{currentTopic.title}</title>
+                <title>{currentTopic.title} | AI Interview Coach</title>
                 <meta name="description" content={currentTopic.description} />
                 <meta name="keywords" content={currentTopic.keywords} />
-                <meta property="og:title" content={currentTopic.title} />
-                <meta property="og:description" content={currentTopic.description} />
-                <meta property="og:type" content="website" />
             </Helmet>
 
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200">
-                <div className="max-w-4xl mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        {/* Back button */}
-                        <button
-                            onClick={() => navigate('/')}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ChevronLeft size={20} />
-                            <span className="font-medium">All Topics</span>
-                        </button>
-
-                        {/* Dynamic topic title and description */}
-                        <div className="text-center mx-4 flex-1">
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-                                {currentTopic.title.split('|')[0].trim()}
+            <header className="bg-white shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="text-center">
+                        <div className="flex justify-center items-center mb-4">
+                            <span className={`text-3xl mr-3 ${currentTopic.color}`}>
+                                {currentTopic.icon}
+                            </span>
+                            <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                                {currentTopic.title} Practice
                             </h1>
-                            <p className="text-gray-500 text-sm mt-1 hidden sm:block">
-                                {currentTopic.description}
-                            </p>
                         </div>
-
-                        {/* Voice control */}
-                        <button
-                            onClick={() => setIsMuted(!isMuted)}
-                            className={`p-2 rounded-full ${isMuted ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}
-                            aria-label={isMuted ? "Unmute AI voice" : "Mute AI voice"}
-                        >
-                            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                        </button>
+                        <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+                            {currentTopic.description}
+                        </p>
                     </div>
                 </div>
             </header>
 
-            {/* Chat Container */}
-            <main className="flex-1 overflow-y-auto py-6 px-4 max-w-4xl mx-auto w-full">
-                <AnimatePresence initial={false}>
-                    {messages.map((message) => (
-                        <motion.div
-                            key={message.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'} mb-6`}
-                        >
-                            <div
-                                className={`max-w-[85%] rounded-2xl p-5 relative ${message.role === 'ai'
-                                    ? 'bg-white shadow-sm border border-gray-100'
-                                    : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'}`}
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className={`flex-shrink-0 mt-0.5 ${message.role === 'ai' ? 'text-blue-500' : 'text-blue-200'}`}>
-                                        {message.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className={`${message.role === 'ai' ? 'text-gray-800' : 'text-white'} whitespace-pre-wrap`}>
-                                            {message.content}
-                                        </p>
-                                        <div className={`text-xs mt-2 ${message.role === 'ai' ? 'text-gray-500' : 'text-blue-200'}`}>
-                                            {message.timestamp}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {message.role === 'ai' && (
-                                    <button
-                                        onClick={() => speak(message.content)}
-                                        disabled={isSpeaking || isMuted}
-                                        className={`absolute -bottom-4 right-4 p-2 rounded-full shadow-md ${isSpeaking
-                                            ? 'bg-blue-100 text-blue-600'
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'} transition-colors`}
-                                        aria-label="Hear again"
+            <main className="flex-1 py-8">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="bg-white shadow rounded-lg overflow-hidden">
+                        <div ref={chatBoxRef} className="h-96 overflow-y-auto p-6 space-y-4">
+                            <AnimatePresence initial={false}>
+                                {messages.map((message) => (
+                                    <motion.div
+                                        key={message.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'}`}
                                     >
-                                        {isSpeaking ? (
-                                            <RotateCw size={16} className="animate-spin" />
-                                        ) : (
-                                            <Volume2 size={16} />
-                                        )}
-                                    </button>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-                    <div ref={chatEndRef} />
-                </AnimatePresence>
-            </main>
-
-            {/* Input Area */}
-            <div className="bg-white border-t border-gray-200 py-4 px-4">
-                <div className="max-w-4xl mx-auto">
-                    <div className="relative flex items-center">
-                        <div className="flex-1 relative">
-                            <textarea
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={isListening ? "Listening..." : "Type your answer or use voice..."}
-                                className="w-full p-4 pr-16 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                rows={1}
-                                style={{ minHeight: '56px', maxHeight: '120px' }}
-                            />
-
-                            <button
-                                onClick={toggleListening}
-                                className={`absolute right-14 bottom-3 p-2 rounded-full transition-colors ${isListening
-                                    ? 'bg-red-500 text-white animate-pulse'
-                                    : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100'}`}
-                                aria-label={isListening ? "Stop listening" : "Start voice input"}
-                            >
-                                <Mic size={20} />
-                            </button>
+                                        <div className={`max-w-3/4 rounded-2xl p-4 ${message.role === 'ai' ? 'bg-gray-50' : 'bg-blue-600 text-white'}`}>
+                                            <div className="flex items-start space-x-3">
+                                                <div className={`flex-shrink-0 ${message.role === 'ai' ? 'text-gray-400' : 'text-blue-200'}`}>
+                                                    {message.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm">{message.content}</p>
+                                                    <p className={`text-xs mt-1 ${message.role === 'ai' ? 'text-gray-500' : 'text-blue-200'}`}>
+                                                        {message.timestamp}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                <div ref={chatEndRef} />
+                            </AnimatePresence>
                         </div>
 
-                        <button
-                            onClick={handleSend}
-                            disabled={!input.trim()}
-                            className={`ml-3 p-3 rounded-xl ${input.trim()
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'} transition-colors`}
-                            aria-label="Send message"
-                        >
-                            <Send size={20} />
-                        </button>
-                    </div>
+                        <div className="bg-gray-50 px-4 py-4 border-t border-gray-200">
+                            <div className="flex items-center gap-4 p-2 rounded-xl bg-white shadow-md border border-gray-200 max-w-3xl mx-auto">
 
-                    <div className="mt-3 text-xs text-gray-500 text-center">
-                        {isListening ? (
-                            <div className="flex items-center justify-center gap-2">
-                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                <span>Listening... Speak now</span>
+                                <button
+                                    onClick={toggleListening}
+                                    aria-label="Toggle voice input"
+                                    className={`transition-colors duration-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 ${isListening
+                                        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+                                        : 'bg-gray-100 text-gray-500 hover:text-gray-700 hover:bg-gray-200 focus:ring-gray-400'
+                                        }`}
+                                >
+                                    <Mic size={20} />
+                                </button>
+
+                                <div className="flex-1">
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSend();
+                                            }
+                                        }}
+                                        placeholder={isListening ? "Listening..." : "Type your message..."}
+                                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={handleSend}
+                                    disabled={!input.trim()}
+                                    aria-label="Send message"
+                                    className={`transition-colors duration-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 ${input.trim()
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 cursor-pointer'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        }`}
+                                >
+                                    <Send size={20} />
+                                </button>
                             </div>
-                        ) : (
-                            <span>Press <kbd className="px-2 py-1 bg-gray-100 rounded-md">Enter</kbd> to send</span>
-                        )}
+
+                            <div className="mt-2 flex justify-between items-center">
+                                <p className="text-xs text-gray-500">
+                                    {isListening ? (
+                                        <span className="flex items-center">
+                                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1"></span>
+                                            Listening...
+                                        </span>
+                                    ) : (
+                                        "Press Enter to send"
+                                    )}
+                                </p>
+                                <button
+                                    onClick={() => setIsMuted(!isMuted)}
+                                    className="text-xs text-gray-500 hover:text-gray-700 flex items-center cursor-pointer"
+                                >
+                                    {isMuted ? (
+                                        <>
+                                            <VolumeX size={14} className="mr-1" />
+                                            Unmute AI
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Volume2 size={14} className="mr-1" />
+                                            Mute AI
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </main>
+
+            <footer className="bg-white border-t border-gray-200 py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="flex items-center justify-center w-full text-blue-600 hover:text-blue-800 cursor-pointer"
+                    >
+                        <ChevronLeft size={18} className="mr-2" />
+                        Back to all interview topics
+                    </button>
+                </div>
+            </footer>
         </div>
     );
 };
