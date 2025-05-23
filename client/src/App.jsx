@@ -19,7 +19,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<HomeSection />} />
-        <Route path="/javascript" element={<InterviewChat />} />
+        <Route path="/interview/javascript" element={<InterviewChat />} />
       </Routes>
       <Footer />
     </div>
