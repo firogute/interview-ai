@@ -31,7 +31,7 @@ const InterviewChat = () => {
     const chatEndRef = useRef(null);
     const recognitionRef = useRef(null);
 
-    // Sample questions based on topic
+
     const topicQuestions = {
         javascript: [
             "Explain the event loop in JavaScript and how it handles asynchronous operations.",
@@ -45,7 +45,6 @@ const InterviewChat = () => {
         ]
     };
 
-    // Initialize speech recognition
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -76,7 +75,7 @@ const InterviewChat = () => {
         };
     }, []);
 
-    // Auto-scroll to bottom
+
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -86,7 +85,7 @@ const InterviewChat = () => {
             recognitionRef.current.stop();
         } else {
             recognitionRef.current.start();
-            setInput(''); // Clear input when starting to listen
+            setInput('');
         }
         setIsListening(!isListening);
     };
@@ -94,7 +93,7 @@ const InterviewChat = () => {
     const speak = (text) => {
         if ('speechSynthesis' in window && !isMuted) {
             setIsSpeaking(true);
-            window.speechSynthesis.cancel(); // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 0.92;
@@ -111,7 +110,6 @@ const InterviewChat = () => {
     const handleSend = () => {
         if (!input.trim()) return;
 
-        // Add user message
         const userMessage = {
             id: Date.now(),
             role: 'user',
@@ -121,7 +119,6 @@ const InterviewChat = () => {
         setMessages(prev => [...prev, userMessage]);
         setInput('');
 
-        // Generate AI response after short delay
         setTimeout(() => {
             const questions = topicQuestions[topic.toLowerCase()] || [
                 "That's interesting. Can you elaborate on your approach?",
@@ -170,7 +167,7 @@ const InterviewChat = () => {
 
                         <button
                             onClick={() => setIsMuted(!isMuted)}
-                            className={`p-2 rounded-full ${isMuted ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}
+                            className={`p-2 rounded-full cursor-pointer ${isMuted ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}
                             aria-label={isMuted ? "Unmute AI voice" : "Mute AI voice"}
                         >
                             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -232,7 +229,6 @@ const InterviewChat = () => {
                 </AnimatePresence>
             </main>
 
-            {/* Input Area */}
             <div className="bg-white border-t border-gray-200 py-4 px-4">
                 <div className="max-w-4xl mx-auto">
                     <div className="relative flex items-center">
