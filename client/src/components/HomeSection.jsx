@@ -75,7 +75,7 @@ function HomeSection() {
                         <p className="text-gray-500 mb-6">{topic.description}</p>
 
                         <button className="bg-black text-white w-full py-2.5 rounded-lg hover:bg-gray-800 transition duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 mt-auto cursor-pointer">
-                            <Link to={`${topic.title.toLowerCase()}`}>Start Practice</Link>
+                            <Link to={`/interview/${topic.title.toLowerCase()}`}>Start Practice</Link>
                         </button>
                     </div>
                 ))}

@@ -3,6 +3,7 @@ import React from "react";
 import Footer from "./components/Footer";
 import { Routes, Route } from "react-router-dom";
 import HomeSection from "./components/HomeSection";
+import InterviewChat from "./components/InterviewChat";
 
 function App() {
 
@@ -18,7 +19,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<HomeSection />} />
-        <Route path="/javascript" element={<Footer />} />
+        <Route path="/javascript" element={<InterviewChat />} />
       </Routes>
       <Footer />
     </div>
