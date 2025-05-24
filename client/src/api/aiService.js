@@ -1,9 +1,15 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI("AIzaSyBAymLL4SZ6DvxF6rU5a5Fz7mvZosXVbKs");
+// const genAI = new GoogleGenerativeAI();
+const ai = new GoogleGenAI({
+  apiKey: "AIzaSyBAymLL4SZ6DvxF6rU5a5Fz7mvZosXVbKs",
+});
 
 export async function generateAIContent(prompt) {
-  const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: prompt,
+  });
+  console.log(response.text);
 }
