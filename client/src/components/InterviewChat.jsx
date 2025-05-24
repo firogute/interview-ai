@@ -247,7 +247,7 @@ const InterviewChat = () => {
                                                         {message.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm">{message.content}</p>
+                                                        <MarkdownRenderer content={message.content} />
                                                         <p className={`text-xs mt-1 ${message.role === 'ai' ? 'text-gray-500' : 'text-blue-200'}`}>
                                                             {message.timestamp}
                                                         </p>
