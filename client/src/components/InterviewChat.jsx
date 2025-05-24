@@ -140,8 +140,16 @@ const InterviewChat = () => {
 
     const speak = (text) => {
         if ('speechSynthesis' in window && !isMuted) {
+            const cleanText = text
+                .replace(/```[\s\S]*?```/g, '')
+                .replace(/`([^`]+)`/g, '$1')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/#+\s*/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1');
+
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.rate = 0.9;
             utterance.pitch = 1;
 
@@ -154,6 +162,7 @@ const InterviewChat = () => {
             window.speechSynthesis.speak(utterance);
         }
     };
+
 
     const handleSend = async () => {
 
