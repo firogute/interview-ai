@@ -155,11 +155,11 @@ const InterviewChat = () => {
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
 
         setUserHasInteracted(true);
         if (!input.trim()) return;
-
+        const res = await generateAIContent(input);
         const userMessage = {
             id: Date.now(),
             role: 'user',
@@ -180,7 +180,7 @@ const InterviewChat = () => {
             const aiResponse = {
                 id: Date.now() + 1,
                 role: 'ai',
-                content: responses[Math.floor(Math.random() * responses.length)],
+                content: res,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
