@@ -16,6 +16,8 @@ import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { useDocumentTitle } from './hooks/useDocumentTitles';
 import { generateAIContent } from '../api/aiService';
 
+import MarkdownRenderer from './MarkDownRenderer';
+
 const TOPIC_METADATA = {
     javascript: {
         title: "JavaScript Interview",
@@ -165,10 +167,9 @@ const InterviewChat = () => {
 
 
     const handleSend = async () => {
-
         setUserHasInteracted(true);
         if (!input.trim()) return;
-        const res = await generateAIContent(input);
+
         const userMessage = {
             id: Date.now(),
             role: 'user',
@@ -178,13 +179,9 @@ const InterviewChat = () => {
 
         setMessages(prev => [...prev, userMessage]);
         setInput('');
-        setTimeout(() => {
-            const responses = [
-                "Interesting perspective. How would you handle edge cases?",
-                "Can you elaborate on that approach?",
-                "What alternative solutions did you consider?",
-                "How would you optimize this solution?"
-            ];
+
+        try {
+            const res = await generateAIContent(input);
 
             const aiResponse = {
                 id: Date.now() + 1,
@@ -195,7 +192,15 @@ const InterviewChat = () => {
 
             setMessages(prev => [...prev, aiResponse]);
             speak(aiResponse.content);
-        }, 800);
+        } catch (error) {
+            console.error("Error generating AI content:", error);
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                role: 'ai',
+                content: "Sorry, I encountered an error processing your request.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }]);
+        }
     };
 
     return (
