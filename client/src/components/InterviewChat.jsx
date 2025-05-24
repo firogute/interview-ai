@@ -14,6 +14,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { useDocumentTitle } from './hooks/useDocumentTitles';
+import { generateAIContent } from '../api/aiService';
 
 const TOPIC_METADATA = {
     javascript: {
@@ -168,8 +169,6 @@ const InterviewChat = () => {
 
         setMessages(prev => [...prev, userMessage]);
         setInput('');
-
-        // Simulate AI response
         setTimeout(() => {
             const responses = [
                 "Interesting perspective. How would you handle edge cases?",
