@@ -1,137 +1,206 @@
-// src/components/MarkdownRenderer.jsx
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'prism-react-renderer';
-import remarkGfm from 'remark-gfm';
+import React from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
-// Theme for syntax highlighting
-const syntaxTheme = {
-    plain: {
-        color: "#393A34",
-        backgroundColor: "#f6f8fa",
-    },
-    styles: [
-        {
-            types: ["comment", "prolog", "doctype", "cdata"],
-            style: { color: "#999988", fontStyle: "italic" },
-        },
-        {
-            types: ["namespace"],
-            style: { opacity: 0.7 },
-        },
-        {
-            types: ["string", "attr-value"],
-            style: { color: "#e3116c" },
-        },
-        {
-            types: ["punctuation", "operator"],
-            style: { color: "#393A34" },
-        },
-        {
-            types: [
-                "entity", "url", "symbol", "number", "boolean",
-                "variable", "constant", "property", "regex", "inserted",
-            ],
-            style: { color: "#36acaa" },
-        },
-        {
-            types: ["atrule", "keyword", "attr-name", "selector"],
-            style: { color: "#00a4db" },
-        },
-        {
-            types: ["function", "deleted", "tag"],
-            style: { color: "#d73a49" },
-        },
-        {
-            types: ["function-variable"],
-            style: { color: "#6f42c1" },
-        },
-        {
-            types: ["tag", "selector", "keyword"],
-            style: { color: "#00009f" },
-        },
-    ],
-};
-
-// 🔧 Extracted Code Block Component
-const CodeBlock = ({ node, inline, className, children, ...props }) => {
-    const match = /language-(\w+)/.exec(className || '');
-    return !inline && match ? (
-        <div className="rounded-md overflow-hidden my-2">
-            <SyntaxHighlighter
-                language={match[1]}
-                style={syntaxTheme}
-                PreTag="div"
-                {...props}
-            >
-                {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
-        </div>
-    ) : (
-        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-red-600">
-            {children}
-        </code>
-    );
-};
-
-// 🔥 Markdown Renderer Component
-const MarkdownRenderer = ({ content }) => {
+export default function MarkdownRenderer({ children }) {
     return (
-        <ReactMarkdown
+        <Markdown
             remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw]}
             components={{
-                code: CodeBlock,
-                pre: ({ children }) => (
-                    <div className="my-2">{children}</div>
-                ),
-                h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold my-3">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                    <h2 className="text-xl font-bold my-2">{children}</h2>
-                ),
-                h3: ({ children }) => (
-                    <h3 className="text-lg font-bold my-2">{children}</h3>
-                ),
-                ul: ({ children }) => (
-                    <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>
-                ),
-                ol: ({ children }) => (
-                    <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>
-                ),
-                blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">
-                        {children}
-                    </blockquote>
-                ),
-                a: ({ children, href }) => (
-                    <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                    >
-                        {children}
-                    </a>
-                ),
-                table: ({ children }) => (
-                    <div className="overflow-auto my-2">
-                        <table className="min-w-full border">{children}</table>
-                    </div>
-                ),
-                th: ({ children }) => (
-                    <th className="border px-4 py-2 text-left bg-gray-50 font-semibold">
-                        {children}
-                    </th>
-                ),
-                td: ({ children }) => (
-                    <td className="border px-4 py-2">{children}</td>
-                ),
+                code({ node, inline, className, children: codeChildren, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const language = match?.[1] || 'text';
+
+                    return !inline ? (
+                        <div className="relative my-4 rounded-lg overflow-hidden shadow-lg">
+                            <div className="flex items-center px-4 py-2 bg-gray-800 border-b border-gray-700">
+                                <div className="flex space-x-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                </div>
+                                <span className="ml-2 text-xs text-gray-300">
+                                    {language}
+                                </span>
+                            </div>
+                            <SyntaxHighlighter
+                                style={atomDark}
+                                language={language}
+                                PreTag="div"
+                                customStyle={{
+                                    margin: 0,
+                                    padding: '1rem',
+                                    background: '#282C34',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.5',
+                                }}
+                                codeTagProps={{
+                                    style: {
+                                        fontFamily: '"Fira Code", "Consolas", "Monaco", "Andale Mono", monospace',
+                                    }
+                                }}
+                                {...props}
+                            >
+                                {String(codeChildren).replace(/\n$/, "")}
+                            </SyntaxHighlighter>
+                        </div>
+                    ) : (
+                        <code className="px-1.5 py-0.5 rounded bg-gray-100 text-red-600 text-sm font-mono">
+                            {codeChildren}
+                        </code>
+                    );
+                },
+
+                p({ node, children, ...props }) {
+                    return (
+                        <p className="mb-4 text-gray-800 leading-relaxed" {...props}>
+                            {children}
+                        </p>
+                    );
+                },
+
+                h1({ node, children, ...props }) {
+                    return (
+                        <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900 border-b pb-2" {...props}>
+                            {children}
+                        </h1>
+                    );
+                },
+
+                h2({ node, children, ...props }) {
+                    return (
+                        <h2 className="text-2xl font-semibold mt-6 mb-3 text-gray-800" {...props}>
+                            {children}
+                        </h2>
+                    );
+                },
+
+                h3({ node, children, ...props }) {
+                    return (
+                        <h3 className="text-xl font-medium mt-5 mb-2 text-gray-700" {...props}>
+                            {children}
+                        </h3>
+                    );
+                },
+
+                ul({ node, children, ...props }) {
+                    return (
+                        <ul className="list-disc pl-6 mb-4 space-y-1" {...props}>
+                            {children}
+                        </ul>
+                    );
+                },
+
+                ol({ node, children, ...props }) {
+                    return (
+                        <ol className="list-decimal pl-6 mb-4 space-y-1" {...props}>
+                            {children}
+                        </ol>
+                    );
+                },
+
+                li({ node, children, ...props }) {
+                    return (
+                        <li className="mb-1 text-gray-700" {...props}>
+                            {children}
+                        </li>
+                    );
+                },
+
+                blockquote({ node, children, ...props }) {
+                    return (
+                        <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 bg-gray-50 py-2 my-4" {...props}>
+                            {children}
+                        </blockquote>
+                    );
+                },
+
+                a({ node, children, href, ...props }) {
+                    return (
+                        <a
+                            href={href}
+                            className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            {...props}
+                        >
+                            {children}
+                        </a>
+                    );
+                },
+
+                table({ node, children, ...props }) {
+                    return (
+                        <div className="overflow-x-auto my-4 shadow-sm rounded-lg border">
+                            <table className="min-w-full divide-y divide-gray-200" {...props}>
+                                {children}
+                            </table>
+                        </div>
+                    );
+                },
+
+                thead({ node, children, ...props }) {
+                    return (
+                        <thead className="bg-gray-50" {...props}>
+                            {children}
+                        </thead>
+                    );
+                },
+
+                th({ node, children, ...props }) {
+                    return (
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" {...props}>
+                            {children}
+                        </th>
+                    );
+                },
+
+                tr({ node, children, ...props }) {
+                    return (
+                        <tr className="hover:bg-gray-50 even:bg-gray-50" {...props}>
+                            {children}
+                        </tr>
+                    );
+                },
+
+                td({ node, children, ...props }) {
+                    return (
+                        <td className="px-4 py-3 text-sm text-gray-700" {...props}>
+                            {children}
+                        </td>
+                    );
+                },
+
+                img({ node, src, alt, ...props }) {
+                    return (
+                        <div className="my-4 rounded-lg overflow-hidden shadow-md">
+                            <img
+                                src={src}
+                                alt={alt}
+                                className="max-w-full h-auto mx-auto"
+                                {...props}
+                            />
+                            {alt && (
+                                <p className="text-center text-xs text-gray-500 mt-1">
+                                    {alt}
+                                </p>
+                            )}
+                        </div>
+                    );
+                },
+
+                hr({ node, ...props }) {
+                    return (
+                        <hr className="my-6 border-gray-200" {...props} />
+                    );
+                },
             }}
         >
-            {content}
-        </ReactMarkdown>
+            {children}
+        </Markdown>
     );
-};
-
-export default MarkdownRenderer;
+}
