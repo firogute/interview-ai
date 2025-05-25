@@ -12,6 +12,6 @@ export async function generateAIContent(prompt) {
     contents: prompt,
   });
 
-  console.log(response.text);
+  console.log(typeof response.text);
   return response.text;
 }
