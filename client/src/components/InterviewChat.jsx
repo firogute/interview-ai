@@ -1,14 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-    Mic,
-    Send,
-    Volume2,
-    RotateCw,
-    ChevronLeft,
-    Sparkles,
-    Bot,
-    User,
-    VolumeX
+    Mic, Send, Volume2, ChevronLeft, Bot, User, VolumeX,
+    Play, Pause
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,9 +65,11 @@ const InterviewChat = () => {
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
     const [isMuted, setIsMuted] = useState(false);
     const chatEndRef = useRef(null);
     const chatBoxRef = useRef(null);
+    const utteranceRef = useRef(null);
 
     const recognitionRef = useRef(null);
 
@@ -140,8 +135,10 @@ const InterviewChat = () => {
         setIsListening(!isListening);
     };
 
-    const speak = (text) => {
+    const speak = (text, messageId) => {
         if ('speechSynthesis' in window && !isMuted) {
+            window.speechSynthesis.cancel();
+
             const cleanText = text
                 .replace(/```[\s\S]*?```/g, '')
                 .replace(/`([^`]+)`/g, '$1')
@@ -150,19 +147,50 @@ const InterviewChat = () => {
                 .replace(/\*\*(.*?)\*\*/g, '$1')
                 .replace(/\*(.*?)\*/g, '$1');
 
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
+            utteranceRef.current = new SpeechSynthesisUtterance(cleanText);
+            utteranceRef.current.rate = 0.9;
+            utteranceRef.current.pitch = 1;
 
-            const voices = window.speechSynthesis.getVoices();
-            const voice = voices.find(v => v.name.includes('Google')) || voices[0];
-            if (voice) utterance.voice = voice;
+            const loadVoices = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v =>
+                    v.name.includes('Google') ||
+                    v.name.includes('English') ||
+                    v.lang.includes('en-')
+                );
+                if (preferredVoice) {
+                    utteranceRef.current.voice = preferredVoice;
+                }
 
-            setIsSpeaking(true);
-            utterance.onend = utterance.onerror = () => setIsSpeaking(false);
-            window.speechSynthesis.speak(utterance);
+                setCurrentlyPlaying(messageId);
+                setIsSpeaking(true);
+
+                utteranceRef.current.onend = () => {
+                    setCurrentlyPlaying(null);
+                    setIsSpeaking(false);
+                };
+
+                utteranceRef.current.onerror = (e) => {
+                    console.error('Speech synthesis error:', e);
+                    setCurrentlyPlaying(null);
+                    setIsSpeaking(false);
+                };
+
+                window.speechSynthesis.speak(utteranceRef.current);
+            };
+
+            if (window.speechSynthesis.getVoices().length === 0) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            } else {
+                loadVoices();
+            }
         }
+    };
+
+    const stopSpeech = () => {
+        window.speechSynthesis.cancel();
+        setCurrentlyPlaying(null);
+        setIsSpeaking(false);
     };
 
 
@@ -191,7 +219,6 @@ const InterviewChat = () => {
             };
 
             setMessages(prev => [...prev, aiResponse]);
-            speak(aiResponse.content);
         } catch (error) {
             console.error("Error generating AI content:", error);
             setMessages(prev => [...prev, {
@@ -241,18 +268,41 @@ const InterviewChat = () => {
                                             transition={{ duration: 0.3 }}
                                             className={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'}`}
                                         >
-                                            <div className={`max-w-[95%] rounded-2xl p-4 ${message.role === 'ai' ? 'bg-gray-50' : 'bg-blue-600 text-white'}`}>
+                                            <div className={`max-w-[95%] rounded-2xl p-4 ${message.role === 'ai' ? 'bg-gray-50' : 'bg-blue-600'}`}>
                                                 <div className="flex items-start space-x-3">
-                                                    <div className={`flex-shrink-0 ${message.role === 'ai' ? 'text-gray-400' : 'text-blue-200'}`}>
+                                                    <div className={`flex-shrink-0 ${message.role === 'ai' ? 'text-gray-400' : 'text-white'}`}>
                                                         {message.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
                                                     </div>
                                                     <div className='max-w-full'>
-                                                        <MarkdownRenderer>
-                                                            {message.content.replace(/(\[.*?\])/g, "$1\n")}
-                                                        </MarkdownRenderer>
-                                                        <p className={`text-xs mt-1 ${message.role === 'ai' ? 'text-gray-500' : 'text-blue-200'}`}>
-                                                            {message.timestamp}
-                                                        </p>
+                                                        <div className={`${message.role === 'ai' ? 'text-gray-800' : 'text-white'}`}>
+                                                            <MarkdownRenderer role={message.role}>
+                                                                {message.content.replace(/(\[.*?\])/g, "$1\n")}
+                                                            </MarkdownRenderer>
+                                                        </div>
+                                                        <div className="flex items-center justify-between mt-1">
+                                                            <p className={`text-xs ${message.role === 'ai' ? 'text-gray-500' : 'text-blue-100'}`}>
+                                                                {message.timestamp}
+                                                            </p>
+                                                            {message.role === 'ai' && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (currentlyPlaying === message.id) {
+                                                                            stopSpeech();
+                                                                        } else {
+                                                                            speak(message.content, message.id);
+                                                                        }
+                                                                    }}
+                                                                    className="ml-2 p-1 rounded-full hover:bg-gray-200 transition-colors"
+                                                                    aria-label={currentlyPlaying === message.id ? "Pause speech" : "Play speech"}
+                                                                >
+                                                                    {currentlyPlaying === message.id ? (
+                                                                        <Pause size={14} className="text-gray-600 cursor-pointer" />
+                                                                    ) : (
+                                                                        <Play size={14} className="text-gray-600 cursor-pointer" />
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

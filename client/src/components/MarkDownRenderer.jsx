@@ -8,7 +8,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 
-export default function MarkdownRenderer({ children }) {
+export default function MarkdownRenderer({ children, role = 'ai' }) {
     return (
         <div className="w-full max-w-full overflow-x-auto">
             <Markdown
@@ -55,7 +55,7 @@ export default function MarkdownRenderer({ children }) {
                                 </div>
                             </div>
                         ) : (
-                            <code className="bg-gray-200 text-pink-600 px-1 py-0.5 rounded text-sm font-mono cursor-pointer">
+                            <code className={`px-1 py-0.5 rounded text-sm font-mono cursor-pointer ${role === 'ai' ? 'bg-gray-200 text-pink-600' : 'bg-blue-100 text-blue-800'}`}>
                                 {codeChildren}
                             </code>
                         );
@@ -63,7 +63,7 @@ export default function MarkdownRenderer({ children }) {
 
                     p({ children, ...props }) {
                         return (
-                            <p className="text-gray-800 leading-relaxed break-words whitespace-pre-line mb-3">
+                            <p className={`leading-relaxed break-words whitespace-pre-line mb-3 ${role === 'ai' ? 'text-gray-800' : 'text-white font-medium'}`}>
                                 {children}
                             </p>
                         );
@@ -75,7 +75,7 @@ export default function MarkdownRenderer({ children }) {
                                 href={href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline break-words"
+                                className={`break-words hover:underline ${role === 'ai' ? 'text-blue-600' : 'text-blue-200'}`}
                             >
                                 {children}
                             </a>
@@ -83,16 +83,24 @@ export default function MarkdownRenderer({ children }) {
                     },
 
                     ul({ children }) {
-                        return <ul className="list-disc list-inside text-gray-800 mb-2">{children}</ul>;
+                        return (
+                            <ul className={`list-disc list-inside mb-2 ${role === 'ai' ? 'text-gray-800' : 'text-white'}`}>
+                                {children}
+                            </ul>
+                        );
                     },
 
                     ol({ children }) {
-                        return <ol className="list-decimal list-inside text-gray-800 mb-2">{children}</ol>;
+                        return (
+                            <ol className={`list-decimal list-inside mb-2 ${role === 'ai' ? 'text-gray-800' : 'text-white'}`}>
+                                {children}
+                            </ol>
+                        );
                     },
 
                     blockquote({ children }) {
                         return (
-                            <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 my-4">
+                            <blockquote className={`border-l-4 pl-4 italic my-4 ${role === 'ai' ? 'border-blue-500 text-gray-700' : 'border-blue-300 text-white'}`}>
                                 {children}
                             </blockquote>
                         );
