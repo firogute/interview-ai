@@ -209,7 +209,7 @@ const InterviewChat = () => {
         setInput('');
 
         try {
-            const res = await generateAIContent(input);
+            const res = await generateAIContent(input, messages);
 
             const aiResponse = {
                 id: Date.now() + 1,
