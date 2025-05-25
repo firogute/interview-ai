@@ -241,12 +241,12 @@ const InterviewChat = () => {
                                             transition={{ duration: 0.3 }}
                                             className={`flex ${message.role === 'ai' ? 'justify-start' : 'justify-end'}`}
                                         >
-                                            <div className={`max-w-3/4 rounded-2xl p-4 ${message.role === 'ai' ? 'bg-gray-50' : 'bg-blue-600 text-white'}`}>
+                                            <div className={`max-w-[95%] rounded-2xl p-4 ${message.role === 'ai' ? 'bg-gray-50' : 'bg-blue-600 text-white'}`}>
                                                 <div className="flex items-start space-x-3">
                                                     <div className={`flex-shrink-0 ${message.role === 'ai' ? 'text-gray-400' : 'text-blue-200'}`}>
                                                         {message.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
                                                     </div>
-                                                    <div>
+                                                    <div className='max-w-full'>
                                                         <MarkdownRenderer>
                                                             {message.content.replace(/(\[.*?\])/g, "$1\n")}
                                                         </MarkdownRenderer>
