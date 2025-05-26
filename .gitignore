@@ -1,0 +1,72 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Build output directories
+dist/
+dist-ssr/
+
+# Local environment files
+*.local
+.env
+.env.*.local
+.env.test
+.env.production
+.env.development
+
+# Editor directories and files
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Miscellaneous
+*.tgz
+*.log.*
+*.bak
+*.tmp
+*.temp
+*.orig
+*.rej
+
+# Optional npm cache
+.npm/
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Mac specific files
+.AppleDouble
+.LSOverride
+
+# Windows image file caches
+ehthumbs.db
+Thumbs.db
+
+# VS Code workspace storage
+.vscode/*.code-workspace
+
+# pnpm store
+.pnpm-store/
+
+# Parcel cache
+.cache/
+
