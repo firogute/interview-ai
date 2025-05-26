@@ -70,6 +70,9 @@ const InterviewChat = () => {
     const chatEndRef = useRef(null);
     const chatBoxRef = useRef(null);
     const utteranceRef = useRef(null);
+    const [isPaused, setIsPaused] = useState(false);
+    const speechSynth = useRef(null);
+
 
     const recognitionRef = useRef(null);
 
@@ -115,6 +118,14 @@ const InterviewChat = () => {
     }, []);
 
     useEffect(() => {
+        speechSynth.current = window.speechSynthesis;
+        return () => {
+            speechSynth.current.cancel();
+        };
+    }, []);
+
+
+    useEffect(() => {
         if (!userHasInteracted) return;
         if (chatBoxRef.current && chatEndRef.current) {
             chatBoxRef.current.scrollTo({
@@ -136,63 +147,76 @@ const InterviewChat = () => {
     };
 
     const speak = (text, messageId) => {
-        if ('speechSynthesis' in window && !isMuted) {
-            window.speechSynthesis.cancel();
+        if (!speechSynth.current || isMuted) return;
 
-            const cleanText = text
-                .replace(/```[\s\S]*?```/g, '')
-                .replace(/`([^`]+)`/g, '$1')
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                .replace(/#+\s*/g, '')
-                .replace(/\*\*(.*?)\*\*/g, '$1')
-                .replace(/\*(.*?)\*/g, '$1');
+        speechSynth.current.cancel();
 
-            utteranceRef.current = new SpeechSynthesisUtterance(cleanText);
-            utteranceRef.current.rate = 0.9;
-            utteranceRef.current.pitch = 1;
+        const cleanText = text
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/#+\s*/g, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/\*(.*?)\*/g, '$1');
 
-            const loadVoices = () => {
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find(v =>
-                    v.name.includes('Google') ||
-                    v.name.includes('English') ||
-                    v.lang.includes('en-')
-                );
-                if (preferredVoice) {
-                    utteranceRef.current.voice = preferredVoice;
-                }
+        utteranceRef.current = new SpeechSynthesisUtterance(cleanText);
+        utteranceRef.current.rate = 0.9;
+        utteranceRef.current.pitch = 1;
 
-                setCurrentlyPlaying(messageId);
-                setIsSpeaking(true);
+        // Voice selection
+        const voices = speechSynth.current.getVoices();
+        const preferredVoice = voices.find(v =>
+            v.name.includes('Google') ||
+            v.name.includes('English') ||
+            v.lang.includes('en-')
+        );
+        if (preferredVoice) {
+            utteranceRef.current.voice = preferredVoice;
+        }
 
-                utteranceRef.current.onend = () => {
-                    setCurrentlyPlaying(null);
-                    setIsSpeaking(false);
-                };
+        setCurrentlyPlaying(messageId);
+        setIsSpeaking(true);
+        setIsPaused(false);
 
-                utteranceRef.current.onerror = (e) => {
-                    console.error('Speech synthesis error:', e);
-                    setCurrentlyPlaying(null);
-                    setIsSpeaking(false);
-                };
+        utteranceRef.current.onend = () => {
+            setCurrentlyPlaying(null);
+            setIsSpeaking(false);
+            setIsPaused(false);
+        };
 
-                window.speechSynthesis.speak(utteranceRef.current);
-            };
+        utteranceRef.current.onerror = () => {
+            setCurrentlyPlaying(null);
+            setIsSpeaking(false);
+            setIsPaused(false);
+        };
 
-            if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = loadVoices;
+        speechSynth.current.speak(utteranceRef.current);
+    };
+
+    const toggleSpeech = (message) => {
+        if (!speechSynth.current) return;
+
+        if (currentlyPlaying === message.id) {
+            if (isPaused) {
+                speechSynth.current.resume();
+                setIsPaused(false);
             } else {
-                loadVoices();
+                speechSynth.current.pause();
+                setIsPaused(true);
             }
+        } else {
+            speak(message.content, message.id);
         }
     };
 
     const stopSpeech = () => {
-        window.speechSynthesis.cancel();
-        setCurrentlyPlaying(null);
-        setIsSpeaking(false);
+        if (speechSynth.current) {
+            speechSynth.current.cancel();
+            setCurrentlyPlaying(null);
+            setIsSpeaking(false);
+            setIsPaused(false);
+        }
     };
-
 
     const handleSend = async () => {
         setUserHasInteracted(true);
@@ -219,6 +243,7 @@ const InterviewChat = () => {
             };
 
             setMessages(prev => [...prev, aiResponse]);
+            speak(aiResponse.content, aiResponse.id);
         } catch (error) {
             console.error("Error generating AI content:", error);
             setMessages(prev => [...prev, {
@@ -285,18 +310,20 @@ const InterviewChat = () => {
                                                             </p>
                                                             {message.role === 'ai' && (
                                                                 <button
-                                                                    onClick={() => {
-                                                                        if (currentlyPlaying === message.id) {
-                                                                            stopSpeech();
-                                                                        } else {
-                                                                            speak(message.content, message.id);
-                                                                        }
-                                                                    }}
+                                                                    onClick={() => toggleSpeech(message)}
                                                                     className="ml-2 p-1 rounded-full hover:bg-gray-200 transition-colors"
-                                                                    aria-label={currentlyPlaying === message.id ? "Pause speech" : "Play speech"}
+                                                                    aria-label={
+                                                                        currentlyPlaying === message.id
+                                                                            ? (isPaused ? "Resume speech" : "Pause speech")
+                                                                            : "Play speech"
+                                                                    }
                                                                 >
                                                                     {currentlyPlaying === message.id ? (
-                                                                        <Pause size={14} className="text-gray-600 cursor-pointer" />
+                                                                        isPaused ? (
+                                                                            <Play size={14} className="text-gray-600 cursor-pointer" />
+                                                                        ) : (
+                                                                            <Pause size={14} className="text-gray-600 cursor-pointer" />
+                                                                        )
                                                                     ) : (
                                                                         <Play size={14} className="text-gray-600 cursor-pointer" />
                                                                     )}
